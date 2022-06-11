@@ -97,27 +97,28 @@ class MainViewModel @Inject constructor(
 
 
         var timeEightAm = ZonedDateTime.now()
-        Log.d(TAG, "addDefaultBatches1: $timeEightAm")
+     //   Log.d(TAG, "addDefaultBatches1: $timeEightAm")
 
         if ((timeEightAm.hour == 8 && timeEightAm.minute > 0) || timeEightAm.hour > 8) {
             timeEightAm = timeEightAm.plusDays(1)
         }
         var timeEightAmUpdated = timeEightAm.withHour(8).withMinute(0).withSecond(0)
-        Log.d(TAG, "addDefaultBatches: $timeEightAmUpdated")
+      //  Log.d(TAG, "addDefaultBatches: $timeEightAmUpdated")
 
 
         var timeEightPm = ZonedDateTime.now()
         /* if ((timeEightPm.hour == 20 && timeEightPm.minute > 0) || timeEightPm.hour > 20) {
              timeEightPm = timeEightPm.plusDays(1)
          }*/
+       // Log.d(TAG, "addDefaultBatches: $timeEightPm")
         timeEightPm =
-            timeEightPm.withZoneSameLocal(ZoneId.systemDefault()).withHour(20).withMinute(20)
+            timeEightPm.withZoneSameLocal(ZoneId.systemDefault()).withHour(14).withMinute(1)
                 .withSecond(0)
-
+        Log.d(TAG, "addDefaultBatches: $timeEightPm")
         val timeMilis = timeEightPm.toInstant().toEpochMilli()
 
         viewModelScope.launch(Dispatchers.IO) {
-            liveData.postValue(true)
+
             notificationDatabase.batchTimeDao().addBatch(
                 BatchTimeEntity(
                     "08:00am", 8, 0, timeEightAm.toInstant().toEpochMilli()
@@ -126,11 +127,12 @@ class MainViewModel @Inject constructor(
             notificationDatabase.batchTimeDao().addBatch(
                 BatchTimeEntity(
                     "08:00pm",
-                    20,
-                    0,
+                    13,
+                    52,
                     timeMilis
                 )
             )
+            liveData.postValue(true)
         }
 
 

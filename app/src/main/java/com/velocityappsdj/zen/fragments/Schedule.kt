@@ -16,10 +16,7 @@ import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
-import com.velocityappsdj.zen.NotificationReceiver
-import com.velocityappsdj.zen.R
-import com.velocityappsdj.zen.SharedPrefUtil
-import com.velocityappsdj.zen.TimeUtils
+import com.velocityappsdj.zen.*
 import com.velocityappsdj.zen.adapters.BatchListAdapter
 import com.velocityappsdj.zen.databinding.FragmentScheduleBinding
 import com.velocityappsdj.zen.room.BatchTimeEntity
@@ -112,7 +109,7 @@ class Schedule : Fragment() {
                     batch.timeStamp
                 }
                 val currentBatch = TimeUtils.getNextBatch(System.currentTimeMillis(), list)
-                scheduleAlarm(currentBatch)
+                AlarmUtil.scheduleAlarm(currentBatch, requireContext())
             }
 
         }

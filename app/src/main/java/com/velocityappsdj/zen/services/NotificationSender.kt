@@ -18,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
@@ -28,7 +29,8 @@ class NotificationSender : IntentService("NotificationSender") {
 
     @OptIn(InternalCoroutinesApi::class)
     override fun onHandleIntent(intent: Intent?) {
-
+        var isUpdated = false
+        var isAlarmSet = false
         val sharedPrefUtil = SharedPrefUtil(applicationContext)
         val batchId = sharedPrefUtil.getCurrentBatchId()
         Log.d(TAG, "onReceive: $batchId")
@@ -49,60 +51,43 @@ class NotificationSender : IntentService("NotificationSender") {
         notification.contentIntent = pendingIntent
         val currentBatchPrimaryKey = sharedPrefUtil.getCurrentBatchPrimaryKey()
         val instance = NotificationDBBuilder.getInstance(applicationContext)
-        currentBatchPrimaryKey?.let {
-            CoroutineScope(Dispatchers.IO).launch {
-                instance.batchTimeDao().getBatch(it)
-                    .collect {
-                        var timeSTamp = it[0].timeStamp
+        if (currentBatchPrimaryKey == null)
+            return
+
+        CoroutineScope(Dispatchers.IO).launch {
+            instance.batchTimeDao().getBatches().collectLatest { list ->
+
+                if (!isUpdated) {
+                    var batch = list.find { batchTimeEntity ->
+                        batchTimeEntity.batchTime == currentBatchPrimaryKey
+                    }
+                    batch?.let {
+                        var timeSTamp = it.timeStamp
                         val timestamp: Instant = Instant.ofEpochMilli(timeSTamp)
                         var zomeTime: ZonedDateTime = timestamp.atZone(ZoneId.systemDefault())
                         zomeTime = zomeTime.plusDays(1)
 
-                        it[0].timeStamp = zomeTime.toInstant().toEpochMilli()
-                        instance.batchTimeDao().updateBatch(it[0])
+                        it.timeStamp = zomeTime.toInstant().toEpochMilli()
+                        isUpdated = true
+                        instance.batchTimeDao().updateBatch(it)
+                        sharedPrefUtil.setCurrentBatchId(batchId + 1)
                     }
+
+                    if (!isAlarmSet) {
+                        var batch = TimeUtils.getNextBatch(System.currentTimeMillis(), list)
+                        isAlarmSet = true
+                        AlarmUtil.scheduleAlarm(batch, applicationContext)
+                    }
+
+                }
             }
         }
-
-
-        sharedPrefUtil.setCurrentBatchId(batchId + 1)
 
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(notificationId, notification)
 
-        CoroutineScope(Dispatchers.IO).launch {
-            instance.batchTimeDao().getBatches()
-                .collectLatest {
-                    var batch = TimeUtils.getNextBatch(System.currentTimeMillis(), it)
-                    scheduleAlarm(batch)
-                }
-        }
 
-
-    }
-
-    private fun scheduleAlarm(currentBatch: BatchTimeEntity?) {
-        Log.d(TAG, "scheduleAlarm() called with: currentBatch = $currentBatch")
-        currentBatch?.let {
-            val intent = Intent(applicationContext, NotificationReceiver::class.java)
-            val pendingIntent = PendingIntent.getBroadcast(
-                applicationContext,
-                SharedPrefUtil(this).getCurrentBatchId(),
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    it.timeStamp,
-                    pendingIntent
-                )
-            } else
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, it.timeStamp, pendingIntent)
-            SharedPrefUtil(this).setCurrentBatchPrimaryKey(it.batchTime)
-        }
     }
 
 }

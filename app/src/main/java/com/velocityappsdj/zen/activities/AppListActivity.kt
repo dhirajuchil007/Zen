@@ -29,10 +29,14 @@ class AppListActivity : AppCompatActivity() {
 
         binding.recyclerAppList.layoutManager = LinearLayoutManager(this)
         adapter = AppListAdapter(apps, this) { app, selected ->
-            if (selected)
+            if (selected) {
                 selectedApps.add(app)
-            else
+                app.isSelected=true
+            }
+            else {
                 selectedApps.remove(app)
+                app.isSelected=false
+            }
             setCount()
         }
         binding.recyclerAppList.adapter = adapter

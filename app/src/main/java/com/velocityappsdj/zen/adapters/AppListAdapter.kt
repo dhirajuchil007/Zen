@@ -35,9 +35,7 @@ class AppListAdapter(
             }
 
             binding.checkboxAdd.isChecked = app.isSelected
-            binding.checkboxAdd.setOnCheckedChangeListener { buttonView, isChecked ->
-                callback.invoke(app, isChecked)
-            }
+
         }
 
     }
@@ -54,7 +52,11 @@ class AppListAdapter(
     }
 
     override fun onBindViewHolder(holder: AppViewHolder, position: Int) {
-        holder.bind(apps[position])
+        val appDetails = apps[position]
+        holder.bind(appDetails)
+        holder.binding.checkboxAdd.setOnClickListener { buttonView ->
+            callback.invoke(appDetails, !appDetails.isSelected)
+        }
     }
 
     override fun getItemCount(): Int {
