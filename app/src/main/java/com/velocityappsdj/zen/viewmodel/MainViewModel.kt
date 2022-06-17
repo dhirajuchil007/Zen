@@ -112,7 +112,7 @@ class MainViewModel @Inject constructor(
          }*/
        // Log.d(TAG, "addDefaultBatches: $timeEightPm")
         timeEightPm =
-            timeEightPm.withZoneSameLocal(ZoneId.systemDefault()).withHour(14).withMinute(1)
+            timeEightPm.withZoneSameLocal(ZoneId.systemDefault()).withHour(14).withMinute(23)
                 .withSecond(0)
         Log.d(TAG, "addDefaultBatches: $timeEightPm")
         val timeMilis = timeEightPm.toInstant().toEpochMilli()
