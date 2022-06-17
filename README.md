@@ -9,5 +9,5 @@ Zen Notification manager allows you to avoid distractions and lets you focus on 
 Features include:
 * Auto dismiss unwanted notifications
 * Whitelist apps whose notifications are important to you for the entire day or a specific time period
-* Receive dismissed notifications in customizable batches fo that you don't miss anything.
+* Receive dismissed notifications in customizable batches so that you don't miss anything.
 
