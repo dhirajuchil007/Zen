@@ -3,6 +3,7 @@ package com.velocityappsdj.zen.fragments
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.app.TimePickerDialog
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -13,8 +14,10 @@ import android.view.ViewGroup
 import android.widget.TimePicker
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import com.velocityappsdj.zen.*
 import com.velocityappsdj.zen.adapters.BatchListAdapter
@@ -36,6 +39,7 @@ class Schedule : Fragment() {
     lateinit var viewModel: MainViewModel
     private var batches = mutableListOf<BatchTimeEntity>()
     lateinit var adapter: BatchListAdapter
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -82,6 +86,7 @@ class Schedule : Fragment() {
         dialog.show()
     }
 
+
     private fun addBatchTime(hourOfDay: Int, minute: Int) {
         var timeStamp = ZonedDateTime.now()
         if (isTimeOfDayPassed(timeStamp, hourOfDay, minute))
@@ -105,11 +110,13 @@ class Schedule : Fragment() {
 
         CoroutineScope(Dispatchers.IO).launch {
             viewModel.getBatches().collectLatest {
-                var list = it.sortedBy { batch ->
-                    batch.timeStamp
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    var list = it.sortedBy { batch ->
+                        batch.timeStamp
+                    }
+                    val currentBatch = TimeUtils.getNextBatch(System.currentTimeMillis(), list)
+                    AlarmUtil.scheduleAlarm(currentBatch, context ?: requireContext())
                 }
-                val currentBatch = TimeUtils.getNextBatch(System.currentTimeMillis(), list)
-                AlarmUtil.scheduleAlarm(currentBatch, requireContext())
             }
 
         }
@@ -138,7 +145,10 @@ class Schedule : Fragment() {
             } else
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, it.timeStamp, pendingIntent)
 
-            SharedPrefUtil(requireContext()).setCurrentBatchPrimaryKey(it.batchTime)
+            //SharedPrefUtil(requireContext()).setCurrentBatchPrimaryKey(it.batchTime)
+            CoroutineScope(Dispatchers.IO).launch {
+                DataStoreUtil(requireContext()).saveBatch(it.batchTime)
+            }
         }
     }
 

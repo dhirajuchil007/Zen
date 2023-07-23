@@ -12,7 +12,7 @@
         android:layout_height="25dp"/>
     <androidx.appcompat.widget.AppCompatTextView
         android:layout_marginLeft="16dp"
-        android:textSize="16sp"
+        android:textSize="14sp"
         android:id="@+id/txt_app_name"
         app:layout_constraintTop_toTopOf="@id/img_app_icon"
         app:layout_constraintStart_toEndOf="@id/img_app_icon"
@@ -20,7 +20,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"/>
     <androidx.appcompat.widget.AppCompatTextView
-        android:textSize="14sp"
+        android:textSize="12sp"
         android:id="@+id/txt_time_elapsed"
         app:layout_constraintTop_toTopOf="@id/txt_app_name"
         app:layout_constraintLeft_toRightOf="@id/txt_app_name"
@@ -29,7 +29,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"/>
     <androidx.appcompat.widget.AppCompatTextView
-        android:textSize="14sp"
+        android:textSize="12sp"
         android:textStyle="bold"
         android:textColor="@color/skin_color"
         android:id="@+id/txt_notification_title"
@@ -40,7 +40,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"/>
     <androidx.appcompat.widget.AppCompatTextView
-        android:textSize="14sp"
+        android:textSize="12sp"
         android:id="@+id/txt_notification_text"
         android:layout_marginTop="8dp"
         app:layout_constraintEnd_toEndOf="parent"

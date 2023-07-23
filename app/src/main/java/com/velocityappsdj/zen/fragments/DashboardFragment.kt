@@ -11,14 +11,17 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.velocityappsdj.zen.DataStoreUtil
 import com.velocityappsdj.zen.R
 import com.velocityappsdj.zen.SharedPrefUtil
 import com.velocityappsdj.zen.adapters.NotificationListAdapter
 import com.velocityappsdj.zen.databinding.FragmentDashboardBinding
 import com.velocityappsdj.zen.models.NotificationListItem
+import com.velocityappsdj.zen.prefKey
 import com.velocityappsdj.zen.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -52,7 +55,13 @@ class DashboardFragment : Fragment() {
         binding.switchButton.setOnCheckedChangeListener { view, isChecked ->
             SharedPrefUtil(requireContext()).setZenMode(isChecked)
         }
-        binding.txtNextBatch?.text = SharedPrefUtil(requireContext()).getCurrentBatchPrimaryKey()
+        lifecycleScope.launch {
+            DataStoreUtil(requireContext()).getBatch().collectLatest {
+                binding.txtNextBatch?.text = "Next Batch: ${it[prefKey]}"
+            }
+        }
+
+        // binding.txtNextBatch?.text = SharedPrefUtil(requireContext()).getCurrentBatchPrimaryKey()
     }
 
     private fun setUpRecycler(view: View) {

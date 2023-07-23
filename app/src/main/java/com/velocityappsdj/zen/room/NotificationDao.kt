@@ -19,7 +19,6 @@ interface NotificationDao {
     @Query("select * from notification_entity where timestamp > :startTimestamp")
     fun getTodaySNotificationCount(startTimestamp: Long): LiveData<List<NotificationEntity>>
 
-    @Query("select * from notification_entity where batchNumber = :batchId and autoDismissed = 1" +
-            "")
+    @Query("select * from notification_entity where batchNumber = :batchId and autoDismissed = 1 order by timestamp desc")
     fun getBatchNotifications(batchId: Int): Flow<List<NotificationEntity>>
 }

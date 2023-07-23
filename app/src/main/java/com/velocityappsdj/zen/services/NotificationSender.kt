@@ -49,36 +49,42 @@ class NotificationSender : IntentService("NotificationSender") {
             .setAutoCancel(true)
             .setContentText("zen body").build()
         notification.contentIntent = pendingIntent
-        val currentBatchPrimaryKey = sharedPrefUtil.getCurrentBatchPrimaryKey()
+
+
         val instance = NotificationDBBuilder.getInstance(applicationContext)
-        if (currentBatchPrimaryKey == null)
-            return
+
 
         CoroutineScope(Dispatchers.IO).launch {
             instance.batchTimeDao().getBatches().collectLatest { list ->
 
-                if (!isUpdated) {
-                    var batch = list.find { batchTimeEntity ->
-                        batchTimeEntity.batchTime == currentBatchPrimaryKey
-                    }
-                    batch?.let {
-                        var timeSTamp = it.timeStamp
-                        val timestamp: Instant = Instant.ofEpochMilli(timeSTamp)
-                        var zomeTime: ZonedDateTime = timestamp.atZone(ZoneId.systemDefault())
-                        zomeTime = zomeTime.plusDays(1)
+                DataStoreUtil(applicationContext).getBatch().collectLatest {
 
-                        it.timeStamp = zomeTime.toInstant().toEpochMilli()
-                        isUpdated = true
-                        instance.batchTimeDao().updateBatch(it)
-                        sharedPrefUtil.setCurrentBatchId(batchId + 1)
-                    }
 
-                    if (!isAlarmSet) {
-                        var batch = TimeUtils.getNextBatch(System.currentTimeMillis(), list)
-                        isAlarmSet = true
-                        AlarmUtil.scheduleAlarm(batch, applicationContext)
-                    }
+                    if (!isUpdated) {
 
+                        var batch = list.find { batchTimeEntity ->
+                            batchTimeEntity.batchTime == it[prefKey]
+                        }
+
+
+                        if (!isAlarmSet) {
+                            var batch = TimeUtils.getNextBatch(System.currentTimeMillis(), list)
+                            isAlarmSet = true
+                            AlarmUtil.scheduleAlarm(batch, applicationContext)
+                        }
+                        batch?.let {
+                            var timeSTamp = it.timeStamp
+                            val timestamp: Instant = Instant.ofEpochMilli(timeSTamp)
+                            var zomeTime: ZonedDateTime = timestamp.atZone(ZoneId.systemDefault())
+                            zomeTime = zomeTime.plusDays(1)
+
+                            it.timeStamp = zomeTime.toInstant().toEpochMilli()
+                            isUpdated = true
+                            instance.batchTimeDao().updateBatch(it)
+                            sharedPrefUtil.setCurrentBatchId(batchId + 1)
+                        }
+
+                    }
                 }
             }
         }

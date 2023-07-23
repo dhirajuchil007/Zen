@@ -1,5 +1,6 @@
 package com.velocityappsdj.zen
 
+import android.util.Log
 import com.velocityappsdj.zen.room.BatchTimeEntity
 import java.text.SimpleDateFormat
 import java.time.LocalTime
@@ -7,6 +8,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 object TimeUtils {
+    private  val TAG = "TimeUtils"
 
     fun getTimePassed(providedTime: Long): String {
         var timeDiff = System.currentTimeMillis() - providedTime
@@ -38,8 +40,12 @@ object TimeUtils {
 
     fun getNextBatch(
         currentTime: Long,
-        sortedBatches: List<BatchTimeEntity>
+        sortedBatches: List<BatchTimeEntity>,
     ): BatchTimeEntity? {
+        Log.d(
+            TAG,
+            "getNextBatch() called with: currentTime = $currentTime, sortedBatches = $sortedBatches"
+        )
         if (sortedBatches.isEmpty()) return null
         for (sortedBatch in sortedBatches) {
             if (sortedBatch.timeStamp > currentTime)

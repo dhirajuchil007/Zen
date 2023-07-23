@@ -7,6 +7,9 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import com.velocityappsdj.zen.room.BatchTimeEntity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 object AlarmUtil {
 
@@ -29,7 +32,10 @@ object AlarmUtil {
                 )
             } else
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, it.timeStamp, pendingIntent)
-            SharedPrefUtil(applicationContext).setCurrentBatchPrimaryKey(it.batchTime)
+           /* SharedPrefUtil(applicationContext).setCurrentBatchPrimaryKey(it.batchTime)*/
+            CoroutineScope(Dispatchers.IO).launch {
+                DataStoreUtil(applicationContext).saveBatch(it.batchTime)
+            }
         }
     }
 }

@@ -8,12 +8,20 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.navigation.ui.NavigationUI.setupWithNavController
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
+
+import com.google.android.gms.ads.MobileAds
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.velocityappsdj.zen.*
 import com.velocityappsdj.zen.room.BatchTimeEntity
@@ -24,12 +32,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.time.LocalTime
 import java.util.*
 
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+    private lateinit var adView: AdView
+    private lateinit var adContainerView: FrameLayout
+    private var initialLayoutComplete = false
 
     private val TAG = "MainActivity"
     private lateinit var viewModel: MainViewModel
@@ -37,7 +47,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
+        viewModel = ViewModelProvider(this)[MainViewModel::class.java]
         viewModel.getAppsList()
 
         if (!SharedPrefUtil(this).isDefaultSetupDone()) {
@@ -51,8 +61,51 @@ class MainActivity : AppCompatActivity() {
         setupWithNavController(bottomNavigationView, navController)
 
         viewModel.getTodaySCount()
-    //    startActivity(BatchNotificationsListActivity.getActivityIntent(this,1))
+        //    startActivity(BatchNotificationsListActivity.getActivityIntent(this,1))
+        showNextBatch()
+        MobileAds.initialize(
+            this
+        ) {
+            Log.d(TAG, "onCreate() called" + it.adapterStatusMap)
+        }
+        loadAds()
 
+    }
+
+    private fun loadAds() {
+        adContainerView = findViewById(R.id.adViewContainer)
+        adView = AdView(this)
+        adContainerView.addView(adView)
+        // Since we're loading the banner based on the adContainerView size, we need
+        // to wait until this view is laid out before we can get the width.
+        adContainerView.viewTreeObserver.addOnGlobalLayoutListener {
+            if (!initialLayoutComplete) {
+                initialLayoutComplete = true
+                AdUtil.loadBanner(
+                    adView,
+                    AdUtil.getAdSize(windowManager, adContainerView, resources, this)
+                )
+            }
+        }
+    }
+
+    private fun showNextBatch() {
+        CoroutineScope(Dispatchers.IO).launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.getBatches().collectLatest {
+
+                    val list = it.sortedBy { batch ->
+                        batch.timeStamp
+                    }
+                    val currentBatch = TimeUtils.getNextBatch(System.currentTimeMillis(), list)
+                    // scheduleAlarm(currentBatch)
+                    Log.d(
+                        TAG, "showNextBatch: " + list
+                    )
+                }
+            }
+
+        }
     }
 
     private fun doFirstTimeSetup() {
@@ -74,12 +127,15 @@ class MainActivity : AppCompatActivity() {
     private fun scheduleFirstBatch() {
         Log.d(TAG, "scheduleFirstBatch() called")
         CoroutineScope(Dispatchers.IO).launch {
-            viewModel.getBatches().collectLatest {
-                var list = it.sortedBy { batch ->
-                    batch.timeStamp
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.getBatches().collectLatest {
+
+                    val list = it.sortedBy { batch ->
+                        batch.timeStamp
+                    }
+                    val currentBatch = TimeUtils.getNextBatch(System.currentTimeMillis(), list)
+                    scheduleAlarm(currentBatch)
                 }
-                val currentBatch = TimeUtils.getNextBatch(System.currentTimeMillis(), list)
-                scheduleAlarm(currentBatch)
             }
 
         }
@@ -144,31 +200,5 @@ class MainActivity : AppCompatActivity() {
         notificationManager.createNotificationChannel(channel)
     }
 
-    /*private fun getListOfApps() {
-        var appList = mutableListOf<AppDetails>()
-        val pm = packageManager
-//get a list of installed apps.
-//get a list of installed apps.
-        val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-        for (packageInfo in packages) {
-            *//*     Log.d(TAG, "Installed package :" + packageInfo.packageName)
-                 Log.d(TAG, "Source dir : " + packageInfo.sourceDir)
-                 Log.d(TAG, "Launch Activity :" + pm.getLaunchIntentForPackage(packageInfo.packageName))
-                 Log.d(TAG, "icon :" + packageInfo.loadIcon(pm))*//*
-            if (pm.getLaunchIntentForPackage(packageInfo.packageName) != null)
-                if (packageInfo.flags == ApplicationInfo.FLAG_SYSTEM) {
-                    // IS A SYSTEM APP
-                } else
-                    appList.add(
-                        AppDetails(
-                            packageInfo.packageName, packageInfo
-                        )
-                    )
 
-        }
-
-        var recycler = findViewById<RecyclerView>(R.id.app_list)
-        recycler.layoutManager = LinearLayoutManager(this)
-        recycler.adapter = AppListAdapter(appList, this)
-    }*/
 }

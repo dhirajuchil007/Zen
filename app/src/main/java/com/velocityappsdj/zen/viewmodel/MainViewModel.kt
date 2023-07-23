@@ -41,7 +41,7 @@ class MainViewModel @Inject constructor(
     }
 
     private fun getTodaySStartTime(): Long {
-        var cal = Calendar.getInstance()
+        val cal = Calendar.getInstance()
         cal.set(Calendar.HOUR_OF_DAY, 0)
         cal.set(Calendar.MINUTE, 0)
         cal.set(Calendar.SECOND, 0)
@@ -93,7 +93,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun addDefaultBatches(): MutableLiveData<Boolean> {
-        var liveData = MutableLiveData<Boolean>()
+        val liveData = MutableLiveData<Boolean>()
 
 
         var timeEightAm = ZonedDateTime.now()
@@ -112,7 +112,7 @@ class MainViewModel @Inject constructor(
          }*/
        // Log.d(TAG, "addDefaultBatches: $timeEightPm")
         timeEightPm =
-            timeEightPm.withZoneSameLocal(ZoneId.systemDefault()).withHour(14).withMinute(23)
+            timeEightPm.withZoneSameLocal(ZoneId.systemDefault()).withHour(20).withMinute(0)
                 .withSecond(0)
         Log.d(TAG, "addDefaultBatches: $timeEightPm")
         val timeMilis = timeEightPm.toInstant().toEpochMilli()
@@ -121,14 +121,14 @@ class MainViewModel @Inject constructor(
 
             notificationDatabase.batchTimeDao().addBatch(
                 BatchTimeEntity(
-                    "08:00am", 8, 0, timeEightAm.toInstant().toEpochMilli()
+                    "08:00am", 8, 0, timeEightAmUpdated.toInstant().toEpochMilli()
                 )
             )
             notificationDatabase.batchTimeDao().addBatch(
                 BatchTimeEntity(
                     "08:00pm",
-                    13,
-                    52,
+                    20,
+                    0,
                     timeMilis
                 )
             )
